@@ -46,46 +46,65 @@ static void	heredoc_run_child(t_redir *redir, int wfd, char **envp, int est)
 		if (!line)
 			break ;
 		if (ft_strcmp(line, redir->target) == 0)
-			return (free(line));
+		{
+			free(line);
+			break ;
+		}
 		heredoc_write_line(&ctx, line);
 		free(line);
 	}
+	close(wfd);
+	exit(0);
 }
 
-static int	heredoc_parent(t_redir *redir, int *pipefd, pid_t pid, int *est)
+static int	heredoc_make_tmp(char **name)
 {
-	int	status;
+	static int	id;
+	char		*num;
+	int			fd;
 
-	close(pipefd[1]);
-	waitpid(pid, &status, 0);
-	set_signal_prompt();
-	if (WIFSIGNALED(status) && WTERMSIG(status) == SIGINT)
-		return (write(STDOUT_FILENO, "\n", 1), *est = 130,
-			g_signal = SIGINT, close(pipefd[0]), 1);
-	redir->fd = pipefd[0];
-	return (0);
+	*name = NULL;
+	num = ft_itoa(id++);
+	if (!num)
+		return (-1);
+	*name = ft_strjoin("/tmp/.ms_hd_", num);
+	free(num);
+	if (!*name)
+		return (-1);
+	fd = open(*name, O_WRONLY | O_CREAT | O_TRUNC, 0600);
+	if (fd < 0)
+	{
+		free(*name);
+		*name = NULL;
+	}
+	return (fd);
 }
 
 int	collect_one_heredoc(t_redir *redir, char **envp, int *exit_status)
 {
-	int		pipefd[2];
+	char	*name;
+	int		wfd;
+	int		status;
 	pid_t	pid;
 
-	if (pipe(pipefd) == -1)
-		return (perror("pipe"), 1);
+	wfd = heredoc_make_tmp(&name);
+	if (wfd < 0)
+		return (perror("heredoc"), 1);
 	set_signal_exec();
 	pid = fork();
 	if (pid < 0)
-		return (close(pipefd[0]), close(pipefd[1]),
+		return (close(wfd), unlink(name), free(name),
 			set_signal_prompt(), perror("fork"), 1);
 	if (pid == 0)
-	{
-		close(pipefd[0]);
-		heredoc_run_child(redir, pipefd[1], envp, *exit_status);
-		close(pipefd[1]);
-		exit(0);
-	}
-	return (heredoc_parent(redir, pipefd, pid, exit_status));
+		heredoc_run_child(redir, wfd, envp, *exit_status);
+	close(wfd);
+	waitpid(pid, &status, 0);
+	set_signal_prompt();
+	if (WIFSIGNALED(status) && WTERMSIG(status) == SIGINT)
+		return (write(STDOUT_FILENO, "\n", 1), *exit_status = 130,
+			g_signal = SIGINT, unlink(name), free(name), 1);
+	return (redir->fd = open(name, O_RDONLY), unlink(name),
+		free(name), 0);
 }
 
 int	collect_heredocs(t_cmd *cmd, char **envp, int *exit_status)

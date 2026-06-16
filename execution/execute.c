@@ -28,12 +28,30 @@ void	update_exit_status(int status, int *exit_status)
 
 void	pipe_child_dispatch(t_cmd *cmd, char **envp, int *exit_status)
 {
+	if (!cmd->args || !cmd->args[0])
+		exit(0);
 	if (is_builtin(cmd))
 	{
 		exec_builtin_core(cmd, &envp, exit_status);
 		exit(*exit_status);
 	}
 	child_exec(cmd, envp);
+}
+
+static void	run_redirs_only(t_cmd *cmd, char **envp, int *exit_status)
+{
+	int	saved_in;
+	int	saved_out;
+
+	if (!cmd->redirs)
+		return ;
+	if (save_stdio(&saved_in, &saved_out))
+		return ;
+	if (setup_redirections(cmd, envp, exit_status))
+		*exit_status = 1;
+	else
+		*exit_status = 0;
+	restore_stdio(saved_in, saved_out);
 }
 
 void	execute(t_cmd *cmd, char ***envp, int *exit_status)
@@ -44,7 +62,9 @@ void	execute(t_cmd *cmd, char ***envp, int *exit_status)
 		return ;
 	if (!cmd->next)
 	{
-		if (is_builtin(cmd))
+		if (!cmd->args || !cmd->args[0])
+			run_redirs_only(cmd, *envp, exit_status);
+		else if (is_builtin(cmd))
 			exec_builtin(cmd, envp, exit_status);
 		else
 			exec_cmd(cmd, *envp, exit_status);

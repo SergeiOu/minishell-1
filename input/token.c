@@ -18,6 +18,7 @@ t_token	*create_token(t_token_type type, char *value,
 	token->quote_type = quote_type;
 	token->joined = 0;
 	token->expanded = 0;
+	token->has_quoted = (quote_type != QUOTE_NONE);
 	token->next = NULL;
 	return (token);
 }

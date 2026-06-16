@@ -43,6 +43,19 @@ char	*expand_value(char *value, char **envp, int in_squote, int est)
 	return (result);
 }
 
+static void	mark_field_splits(char *s)
+{
+	int	i;
+
+	i = 0;
+	while (s && s[i])
+	{
+		if (s[i] == ' ' || s[i] == '\t' || s[i] == '\n')
+			s[i] = SPLIT_MARK;
+		i++;
+	}
+}
+
 void	expand_tokens(t_token *tokens, char **envp, int exit_status)
 {
 	t_token	*current;
@@ -53,16 +66,14 @@ void	expand_tokens(t_token *tokens, char **envp, int exit_status)
 	{
 		if (current->type == TOKEN_WORD)
 		{
-			if (current->quote_type == QUOTE_NONE
-				&& should_expand(current->value))
-				current->expanded = 1;
-			expanded = expand_value(current->value,
-					envp, (current->quote_type == QUOTE_SINGLE),
-					exit_status);
+			expanded = expand_value(current->value, envp,
+					(current->quote_type == QUOTE_SINGLE), exit_status);
 			if (!expanded)
 				expanded = ft_strdup("");
 			free(current->value);
 			current->value = expanded;
+			if (current->quote_type == QUOTE_NONE)
+				mark_field_splits(current->value);
 		}
 		current = current->next;
 	}

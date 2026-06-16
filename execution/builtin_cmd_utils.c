@@ -12,11 +12,31 @@
 
 #include "../includes/minishell.h"
 
+static int	digit_overflow(unsigned long n, int d, int sign)
+{
+	unsigned long	limit;
+	unsigned long	cut;
+
+	limit = 9223372036854775807UL + (sign < 0);
+	cut = limit / 10;
+	if (n > cut)
+		return (1);
+	if (n == cut && (unsigned long)d > limit % 10)
+		return (1);
+	return (0);
+}
+
 int	is_numeric(const char *s)
 {
-	int	i;
+	int				i;
+	int				sign;
+	unsigned long	n;
 
 	i = 0;
+	sign = 1;
+	n = 0;
+	if (s[i] == '-')
+		sign = -1;
 	if (s[i] == '-' || s[i] == '+')
 		i++;
 	if (!s[i])
@@ -25,6 +45,9 @@ int	is_numeric(const char *s)
 	{
 		if (!ft_isdigit(s[i]))
 			return (0);
+		if (digit_overflow(n, s[i] - '0', sign))
+			return (0);
+		n = n * 10 + (s[i] - '0');
 		i++;
 	}
 	return (1);

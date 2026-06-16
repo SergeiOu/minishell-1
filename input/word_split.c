@@ -7,21 +7,21 @@ int	count_word_pieces(t_token *token)
 	int		pieces;
 
 	v = token->value;
-	if (token->quote_type != QUOTE_NONE || !token->expanded)
-		return (1);
 	i = 0;
 	pieces = 0;
 	while (v[i])
 	{
-		while (v[i] && is_whitespace(v[i]))
+		while (v[i] && v[i] == SPLIT_MARK)
 			i++;
-		if (v[i] && !is_whitespace(v[i]))
+		if (v[i] && v[i] != SPLIT_MARK)
 		{
 			pieces++;
-			while (v[i] && !is_whitespace(v[i]))
+			while (v[i] && v[i] != SPLIT_MARK)
 				i++;
 		}
 	}
+	if (pieces == 0 && token->has_quoted)
+		return (1);
 	return (pieces);
 }
 
@@ -43,23 +43,24 @@ int	add_split_word(t_cmd *cmd, t_token *token, int *idx)
 	char	*v;
 	int		start;
 	int		i;
+	int		found;
 
-	if (token->quote_type != QUOTE_NONE || !token->expanded)
-		return (add_arg_to_command(cmd, token->value, idx));
 	v = token->value;
 	i = 0;
+	found = 0;
 	while (v[i])
 	{
-		while (v[i] && is_whitespace(v[i]))
+		while (v[i] && v[i] == SPLIT_MARK)
 			i++;
 		start = i;
-		while (v[i] && !is_whitespace(v[i]))
+		while (v[i] && v[i] != SPLIT_MARK)
 			i++;
-		if (i > start)
-		{
-			if (!add_piece(cmd, v + start, i - start, idx))
-				return (0);
-		}
+		if (i > start && add_piece(cmd, v + start, i - start, idx))
+			found = 1;
+		else if (i > start)
+			return (0);
 	}
+	if (!found && token->has_quoted)
+		return (add_arg_to_command(cmd, "", idx));
 	return (1);
 }

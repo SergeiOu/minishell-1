@@ -7,9 +7,8 @@ static void	join_into_prev(t_token *prev, t_token *cur)
 	merged = ft_strjoin(prev->value, cur->value);
 	free(prev->value);
 	prev->value = merged;
-	if (cur->expanded && cur->quote_type == QUOTE_NONE
-		&& prev->quote_type == QUOTE_NONE)
-		prev->expanded = 1;
+	if (cur->has_quoted)
+		prev->has_quoted = 1;
 	prev->next = cur->next;
 	free(cur->value);
 	free(cur);

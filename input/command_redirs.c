@@ -12,6 +12,24 @@
 
 #include "../includes/minishell.h"
 
+static char	*redir_target_dup(const char *s)
+{
+	char	*t;
+	int		i;
+
+	t = ft_strdup(s);
+	if (!t)
+		return (NULL);
+	i = 0;
+	while (t[i])
+	{
+		if (t[i] == SPLIT_MARK)
+			t[i] = ' ';
+		i++;
+	}
+	return (t);
+}
+
 int	handle_redir_in(t_cmd *cmd, t_token **current)
 {
 	char	*target;
@@ -19,7 +37,7 @@ int	handle_redir_in(t_cmd *cmd, t_token **current)
 	*current = (*current)->next;
 	if (!*current || (*current)->type != TOKEN_WORD)
 		return (0);
-	target = ft_strdup((*current)->value);
+	target = redir_target_dup((*current)->value);
 	if (!target)
 		return (0);
 	if (!add_redir(cmd, REDIR_IN, target, 0))
@@ -36,7 +54,7 @@ int	handle_redir_out(t_cmd *cmd, t_token **current)
 	*current = (*current)->next;
 	if (!*current || (*current)->type != TOKEN_WORD)
 		return (0);
-	target = ft_strdup((*current)->value);
+	target = redir_target_dup((*current)->value);
 	if (!target)
 		return (0);
 	if (is_append)
@@ -57,7 +75,7 @@ int	handle_heredoc(t_cmd *cmd, t_token **current)
 	if (!*current || (*current)->type != TOKEN_WORD)
 		return (0);
 	quoted = ((*current)->quote_type != QUOTE_NONE);
-	target = ft_strdup((*current)->value);
+	target = redir_target_dup((*current)->value);
 	if (!target)
 		return (0);
 	if (!add_redir(cmd, REDIR_HEREDOC, target, quoted))

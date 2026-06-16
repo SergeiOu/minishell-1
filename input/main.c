@@ -17,7 +17,8 @@ static void	process_input(char *input, char ***envp, int *exit_status)
 	expand_tokens(tokens, *envp, *exit_status);
 	merge_joined_tokens(&tokens);
 	commands = build_commands(tokens);
-	if (commands && commands->args && commands->args[0])
+	if (commands && commands->args
+		&& (commands->args[0] || commands->redirs || commands->next))
 		execute(commands, envp, exit_status);
 	free_commands(commands);
 	free_tokens(tokens);
