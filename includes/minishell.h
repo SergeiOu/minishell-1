@@ -9,9 +9,12 @@
 # include <sys/stat.h>
 # include <signal.h>
 # include <fcntl.h>
+# include <errno.h>
 # include <readline/readline.h>
 # include <readline/history.h>
 # include "libft/libft.h"
+
+# define SPLIT_MARK '\037'
 
 typedef enum e_redir_type
 {
@@ -62,6 +65,7 @@ typedef struct s_token
 	t_quote_type	quote_type;
 	int				joined;
 	int				expanded;
+	int				has_quoted;
 	struct s_token	*next;
 }	t_token;
 
